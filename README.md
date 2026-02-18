@@ -1,78 +1,97 @@
-# Connect4 Vision Robot
+🤖 Autonomous Connect 4 Robot System (Niryo Ned2)
 
-A modular Connect 4 demonstration that combines computer vision, game logic, a minimax AI, and a robot manipulator to play discs on a physical board.
+An end-to-end autonomous mechatronics system where a Niryo Ned2 6-axis robotic arm plays Connect 4 against a human opponent in real-time. This project demonstrates the complete perception → decision → action pipeline, integrating Computer Vision for environment sensing, Minimax AI for strategic reasoning, and precise robotic actuation.
 
-Features
-- Real-time detection of red/yellow discs from a camera feed.
-- Mapping of detected discs to a 6×7 logical Connect 4 board.
-- Gravity-aware move detection to reduce false positives.
-- Configurable AI difficulty (Easy / Medium / Hard) using minimax with alpha–beta pruning.
-- Robot control for physical pick-and-place using `pyniryo` (mock fallback available).
-- Simple fullscreen dashboard for configuration.
+📺 Project Demonstration
 
-Repository structure (key folders)
-- `main.py` — Orchestrator: camera loop, move detection, AI integration, robot calls.
-- `vision/` — Camera, color detection, ROI selection, mapping and move detection.
-- `game_logic/` — `Connect4Game` logic and `ai_strategy` (minimax & heuristic).
-- `robot_control/` — Robot wrapper, pick/place sequences, pose tables and coin management.
-- `ui/` — Tkinter dashboard for settings.
-- `audio/` — Optional music/SFX and TTS helpers.
+Watch the full project video on YouTube
 
-Requirements
-- Python 3.8+ recommended
-- Core (required): `numpy`, `opencv-python`, `pillow`
-- Optional (for full experience): `pygame` (audio), `pyttsx3` (TTS), `pyniryo` (Niryo robot API)
+🚀 Key Features
 
-Install (example)
+Closed-Loop Integration: Fully autonomous feedback loop using OpenCV, strategic AI, and Niryo mechatronics.
 
-```bash
-python -m pip install --upgrade pip
-pip install numpy opencv-python pillow
-# Optional extras
-pip install pygame pyttsx3 pyniryo
-```
+Strategic AI: Minimax algorithm with Alpha-Beta Pruning and a custom heuristic evaluation function.
 
-Setup
-1. Camera & ROI (board grid):
-   - Before running the full system, create and save the board ROI once so the pipeline knows where to crop frames.
-   - Run the ROI selector:
+Robust Vision: HSV-based color segmentation and centroid-to-grid mapping to handle real-world lighting.
 
-```bash
-python -m vision.detect_board
-```
+Precision Robotics: Collision-safe trajectory planning and automated Round-Robin coin management.
 
-   - Use the interactive selector to draw the board rectangle and press a key to confirm. This saves `board_grid.npy` in the project folder.
+Configuration Dashboard: GUI-based setup for difficulty levels (Easy, Medium, Hard) and player settings.
 
-2. Adjust camera index if needed: `main.py` uses `camera_id = 1` by default (external webcam). Change to `0` for built-in cameras.
+Mock Hardware Support: Integrated simulation mode (_MockNiryoRobot) for logic testing without physical hardware.
 
-Run
+🧠 Technical Deep Dive
 
-```bash
-python main.py
-```
+1. Artificial Intelligence (The Brain)
 
-Notes
-- The UI dashboard will appear first (fullscreen). Choose player name, color, difficulty, and who starts.
-- The code attempts to connect to a Niryo robot via `pyniryo`. If not available, a mock robot is used and actions are printed to the console so you can develop without hardware.
-- If robot is physically configured to place a particular color (e.g., Red), the system prints a warning when human selects the opposite color. Physical robot behavior is determined by `robot_control/robot_positions.py` and may require per-setup calibration.
+The decision engine (ai_strategy.py) simulates future game states to find the optimal column.
 
-Tips for more robust detection
-- If you see noisy masks, enable morphological cleaning in `vision/color_detection.py` (commented alternative) or tune HSV thresholds.
-- For lighting variation, add an auto white-balance step or calibrate color thresholds per session.
+Optimization: Alpha-Beta Pruning allows the search tree to reach deeper depths (up to 8 moves) within the same time window by cutting off unpromising branches.
 
-Troubleshooting
-- Camera not opening: verify camera index and that no other app is using it.
-- `board_grid.npy` missing: re-run `python -m vision.detect_board` to recreate it.
-- Robot connection fails: confirm network and `pyniryo` installation; the code falls back to a mock robot when the real robot is unreachable.
+Heuristic Evaluation: Positions are scored using a weighted sliding window:
 
-Development / Extending
-- Replace the color-thresholding detector with a small object detector (MobileNet/YOLO) for more robust performance under varying light.
-- Add temporal voting in move detection to tolerate partial occlusions.
-- Add an automated calibration routine that lets the robot tune `DROP_POSES` for precise placement.
+Win (4-in-a-row): $+100,000$
 
-Acknowledgements
-- Built as a modular demonstration combining OpenCV vision, classical game AI, and robot control sequences.
+Threat (3-in-a-row): $+100$
 
-License
-- (Add your preferred license here)
-"# Connect4-Niryo-AI-Robot" 
+Blocking Opponent: $-120$ (Prioritizes defensive stability)
+
+Center Column Bonus: $+4$ (Maximizes connection potential)
+
+2. Computer Vision (The Eyes)
+
+Built with OpenCV, the vision pipeline digitizes the physical board state:
+
+HSV Segmentation: Uses a dual-mask approach to handle the Red hue wrap-around ($0^{\circ}$ and $180^{\circ}$) and single-mask thresholding for Yellow.
+
+Centroid Mapping: Uses Image Moments (cv2.moments) to calculate the exact center of detected discs, mapping them to the grid using pixel-to-coordinate division.
+
+Gravity-Aware Logic: Detects human moves by differencing frames and selecting the lowest changed cell in a column to ignore falling discs.
+
+3. Robotics (The Hands)
+
+Controlled via the pyniryo library with custom movement primitives:
+
+Suction End-Effector: Utilizes a vacuum pump for reliable, non-marring pickup of flat coins.
+
+Stack Management: A CoinManager tracks 3 distinct coin stacks (21 coins total), cycling through them in a round-robin fashion to prevent supply depletion in a single zone.
+
+Safe Trajectories: Enforces a SAFE_Z height (0.40m) during all translational movements to prevent board collisions and Inverse Kinematics (IK) failures.
+
+🛠️ Physical Challenges & Engineering Solutions
+
+The Suction Problem: Plastic coins were too textured for a vacuum seal.
+
+Solution: Applied thin circular cardboard backings to provide a perfectly flat, non-porous surface.
+
+Targeting Accuracy: The Connect 4 frame is extremely narrow ($<1$cm clearance).
+
+Solution: Built a custom cardboard funnel and performed millimeter-level manual pose calibration for all 7 drop columns.
+
+Development Constraints: Limited access to the physical robot.
+
+Solution: Implemented a software Mock Robot abstraction layer that prints actions to the console, allowing full AI/Vision debugging offline.
+
+📁 Project Structure
+
+├── main.py              # Central Orchestrator & Game Loop
+├── ai_strategy.py       # Minimax AI & Heuristic Logic
+├── connect4_game.py     # Logical board representation & Win checks
+├── connect4_robot.py    # Hardware Abstraction & Mock support
+├── robot_actions.py     # Pick-and-Place movement primitives
+├── robot_positions.py   # Calibrated 6D Poses (Pickup/Drop)
+├── coin_manager.py      # Round-robin stack management
+├── color_detection.py   # OpenCV HSV color segmentation
+├── map_discs_to_grid.py # Centroid & Pixel-to-Grid mapping logic
+└── dashboard.py         # Tkinter-based configuration UI
+
+
+👥 Contributors
+
+Satya Naga Vamsi Ganesh Manepalli
+
+Arpitha Thimmegowda
+
+Supervised by: Prof. Dr.-Ing. Thomas Nierhoff
+
+Institution: OTH Amberg-Weiden

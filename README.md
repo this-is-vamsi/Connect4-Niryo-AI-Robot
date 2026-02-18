@@ -14,7 +14,7 @@ integrating **Computer Vision**, **Minimax AI**, and **precision robotic actuati
 
 🎥 Watch the full project video on YouTube  
 
-*([Insert your YouTube link here](https://drive.google.com/file/d/156Vr7NH8XyMnDlW1Xb9NzeY3vUy2lh4W/view?usp=sharing))*
+*([click here](https://drive.google.com/file/d/156Vr7NH8XyMnDlW1Xb9NzeY3vUy2lh4W/view?usp=sharing))*
 
 ---
 
